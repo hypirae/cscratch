@@ -1,8 +1,39 @@
+/**
+ * chess.c - a simple implementation of the game of chess in C
+ *
+ * @author Hypirae <github.com/Hypirae>
+ * @copyright 2024
+ * @license MIT
+ *
+ * Nothing inherently makes sense and though I have gone through
+ * great trouble to add informative documentation I fear that I have
+ * instead gummed it up by combining notes and code into the same file.
+ *
+ * Cry about it... idk
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 
+// Customary rambling:
+//
+// There are 64 spaces on a chess board.
+// There are also 6 different suits...
+// Each suit can either of the white rank or the black rank...
+// Of course there is the need to represent an empty space...
+//
+// So in total, if I were to represent the suits using 3 bits
+// I would have enough space for all of the suits, plus two spaces
+// for colored but empty spaces (currently unused), and a free bit to spare.
+//
+// This means that I should be able to represent each piece as a 4 bit number
+// so that would reduce the amount of memory needed to represent the board in
+// half. There is no clear evidence that this is a good thing and current
+// endeavors seem to point to that not being the case.
+//
+// So essentially:
+//
 // Each square is represented by 4 bytes.
 // 0  0  0  0
 // ^  ^_____^
@@ -25,11 +56,20 @@
 // 1100 = WHITE ROOK
 // 1101 = WHITE QUEEN
 // 1110 = WHITE KING
+// 1111 = UNDEFINED
+
+// The board should be 32 bytes in size
 //
-// Therefore with 64 squares on the board, and with each square being represented
-// by 4 bits, we would need half as many bytes.
+// However, realistically, the compiler can pick any
+// integer width that it wants in order to represent
+// our enum so this moreso defines the number of spaces
+// on a board.
+//
+// This behavior can be changed but to do so is compiler
+// dependent.
 #define BOARD_SIZE 32
 
+// Some macros to help get the high and low pieces in each byte.
 #define HIGH(x) (x >> 4)
 #define LOW(x) (x & 0x0F)
 
@@ -112,17 +152,24 @@ void initialize_board(square_e *board) {
 	};
 	
 	// Copy the starting board over to our game board
+	// IMPORTANT: You must copy based on the size of square_e rather
+	//            than trying to copy by bytes as the compiler
+	//            is not garaunteed to pick a uint8_t
 	memcpy(board, starting_board, (sizeof(square_e) * BOARD_SIZE));
 }
 
 void print_board(square_e *board) {
 	for (int i = 0; i < BOARD_SIZE; i++) {
-		uint8_t high = HIGH(board[i]);
-		uint8_t low = LOW(board[i]);
+		uint8_t high = HIGH(board[i]); // Piece on the left
+		uint8_t low = LOW(board[i]);   // Piece on the right
 
+		// TODO: Add ANSI escape codes to generate a board
+		//       that is alternating black and white
 		printf("%c%c", square_to_char(high),
 				square_to_char(low));
 
+		// Print the board into a neat 8 x 8 grid
+		// Since 0 % 4 == 0 we need to make sure to skip this
 		if ((i + 1) % 4 == 0 && i != 0) {
 			printf("\n");
 		}
@@ -130,7 +177,10 @@ void print_board(square_e *board) {
 }
 
 int main(int argc, char **argv) {
-	// Allocate enough memory for the board.
+	// Allocate enough memory for the board
+	// IMPORTANT: Allocate based on the size of square_e and not
+	//            on byte length as it is not garaunteed that it
+	//            is represented as a uint8_t
 	square_e *board = calloc(BOARD_SIZE, sizeof(square_e));
 	
 	// Initiaize the game board
@@ -144,3 +194,4 @@ int main(int argc, char **argv) {
 
 	return EXIT_SUCCESS;
 }
+
